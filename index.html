@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Tetris Hans Alvarez</title>
+  <style>
+    :root {
+      --bg: #0b0f1a;
+      --panel: #0f1624;
+      --accent: #00d1ff;
+      --muted: #7b8aa3;
+      --cell: #0b1726;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      background: linear-gradient(180deg, var(--bg), #061021);
+      color: #e6f0ff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Arial, sans-serif;
+      height: 200vh;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    /* Splash screen with fade-out animation */
+    .splash {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #0b0f1a, #061021);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      animation: fadeOut 1.2s ease-in-out forwards;
+      animation-delay: 0.9s;
+    }
+
+    .splash-content {
+      text-align: center;
+      font-size: 48px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      background: linear-gradient(135deg, #00d1ff, #00f0f0);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    @keyframes fadeOut {
+      0% {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      100% {
+        opacity: 0;
+        transform: scale(1.05);
+        pointer-events: none;
+      }
+    }
+
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      background: linear-gradient(180deg, rgba(11, 15, 26, 0.98), rgba(15, 22, 36, 0.95));
+      backdrop-filter: blur(10px);
+      padding: 8px 8px 6px;
+      z-index: 100;
+      border-bottom: 1px solid rgba(0, 209, 255, 0.1);
+    }
+
+    .header-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      max-width: 100%;
+    }
+
+    .stat-badge {
+      background: rgba(0, 209, 255, 0.08);
+      padding: 4px 3px;
+      border-radius: 5px;
+      border: 1px solid rgba(0, 209, 255, 0.12);
+      text-align: center;
+    }
+
+    .stat-badge .label {
+      color: var(--muted);
+      font-size: 7px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .stat-badge .value {
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--accent);
+      margin-top: 1px;
+    }
+
+    .game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100vh;
+      padding-top: 60px;
+      padding-bottom: 150px;
+    }
+
+    .board {
+      background: var(--panel);
+      padding: px;
+      border-radius: 8px;
+      box-shadow: 0 6px 30px rgba(0, 0, 0, 0.6);
+      flex-shrink: 0;
+    }
+
+    .grid {
+      /* Se aumenta el tamaño de la celda de 10px a 20px */
+      width: 210px;
+      /* (10 columnas * 20px) + (9 separaciones * 1px) = 209px */
+      height: 419px;
+      /* (20 filas * 20px) + (19 separaciones * 1px) = 419px */
+      display: grid;
+      grid-template-columns: repeat(10, 20px);
+      /* <-- MODIFICADO: 10 columnas de 20px de ancho */
+      grid-template-rows: repeat(20, 20px);
+      /* <-- Ajustado: 20 filas de 20px de alto */
+      gap: 1px;
+      background: #071123;
+      border-radius: 6px;
+      overflow: visible;
+    }
+
+    
+
+    @media (min-width: 769px) {
+
+      /* Desktop grid size */
+      .grid {
+        width: 300px;
+        height: 600px;
+        grid-template-columns: repeat(10, 30px);
+        grid-template-rows: repeat(20, 30px);
+      }
+
+      .game-container {
+        flex-direction: row;
+        padding-top: 80px;
+        gap: 20px;
+        justify-content: center;
+      }
+
+      .header {
+        position: relative;
+        border-bottom: none;
+        padding: 16px 12px;
+        margin-bottom: 12px;
+      }
+
+      .header-stats {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        max-width: 400px;
+      }
+
+      .stat-badge {
+        padding: 12px 8px;
+      }
+
+      .stat-badge .label {
+        font-size: 10px;
+      }
+
+      .stat-badge .value {
+        font-size: 20px;
+      }
+
+      .board {
+        padding: 12px;
+      }
+
+      .footer-panel {
+        width: 320px;
+        max-width: 320px;
+        padding: 16px;
+        margin-top: 0;
+      }
+
+      .next {
+        width: 160px;
+        height: 160px;
+      }
+
+      .controls {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+
+      button.btn {
+        padding: 12px 14px;
+        font-size: 13px;
+        min-height: 40px;
+      }
+
+      .touchControls {
+        display: none !important;
+      }
+
+      .muted {
+        font-size: 11px;
+      }
+
+      footer {
+        font-size: 10px;
+      }
+    }
+
+    .cell {
+      width: 100%;
+      height: 100%;
+      background: var(--cell);
+      border-radius: 2px;
+      box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.4);
+      transition: background 0.15s ease;
+    }
+
+    .cI {
+      background: #00f0f0;
+    }
+
+    .cJ {
+      background: #0000f0;
+    }
+
+    .cL {
+      background: #f0a000;
+    }
+
+    .cO {
+      background: #f0f000;
+    }
+
+    .cS {
+      background: #00f000;
+    }
+
+    .cT {
+      background: #a000f0;
+    }
+
+    .cZ {
+      background: #f00000;
+    }
+
+    .ghost {
+      opacity: 0.15;
+      filter: grayscale(30%);
+    }
+
+    .footer-panel {
+      width: calc(100% - 12px);
+      max-width: 192px;
+      padding: 6px 8px;
+      background: linear-gradient(180deg, #071025, #0e1a2b);
+      border-radius: 8px;
+      box-shadow: 0 6px 30px rgba(0, 0, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 6px;
+    }
+
+    .next-section {
+      text-align: center;
+    }
+
+    .next-label {
+      color: var(--muted);
+      font-size: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 3px;
+      display: block;
+    }
+
+    .next {
+      width: 100px;
+      height: 100px;
+      background: #061426;
+      border-radius: 6px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-template-rows: repeat(4, 1fr);
+      gap: 2px;
+      padding: 3px;
+      border: 1px solid rgba(0, 209, 255, 0.1);
+    }
+
+    .next .cell {
+      border-radius: 3px;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 5px;
+    }
+
+    button.btn {
+      background: rgba(11, 32, 48, 0.8);
+      padding: 5px 3px;
+      border-radius: 6px;
+      border: 1px solid rgba(0, 209, 255, 0.2);
+      color: #cfefff;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 9px;
+      transition: all 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+      min-height: 30px;
+    }
+
+    button.btn:active {
+      background: rgba(0, 209, 255, 0.15);
+      border-color: rgba(0, 209, 255, 0.4);
+      transform: scale(0.96);
+    }
+
+    .touchControls {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
+      margin-top: 4px;
+    }
+
+    .touchControls button {
+      min-height: 36px;
+      padding: 5px;
+      border-radius: 6px;
+      background: rgba(11, 32, 48, 0.9);
+      color: #e6f0ff;
+      border: 1px solid rgba(0, 209, 255, 0.2);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .touchControls button:active {
+      background: rgba(0, 209, 255, 0.2);
+      border-color: rgba(0, 209, 255, 0.5);
+      transform: scale(0.92);
+    }
+
+    .touchControls #t-drop {
+      grid-column: 1 / -1;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 8px;
+      line-height: 1.3;
+      text-align: center;
+      margin-top: 2px;
+    }
+
+    footer {
+      font-size: 7px;
+      color: var(--muted);
+      text-align: center;
+      margin-top: 2px;
+    }
+
+    input,
+    textarea,
+    select,
+    button {
+      font-size: 16px;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Splash screen with fade-out animation -->
+  <div class="splash">
+    <div class="splash-content">Created By Ing. Hans Alvarez</div>
+  </div>
+
+  <div class="header">
+    <div class="header-stats">
+      <div class="stat-badge">
+        <div class="label">Puntos</div>
+        <div id="score" class="value">0</div>
+      </div>
+      <div class="stat-badge">
+        <div class="label">Líneas</div>
+        <div id="lines" class="value">0</div>
+      </div>
+      <div class="stat-badge">
+        <div class="label">Nivel</div>
+        <div id="level" class="value">1</div>
+      </div>
+      <div class="stat-badge">
+        <div class="label">Récord</div>
+        <div id="high" class="value">0</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="game-container">
+    <div class="board" aria-label="Tablero de Tetris">
+      <div class="grid" id="grid" aria-hidden="false"></div>
+    </div>
+
+    <div class="footer-panel" aria-label="Controles y siguiente pieza">
+      <div class="next-section">
+        <span class="next-label">Siguiente</span>
+        <div class="next" id="next"></div>
+      </div>
+
+      <div class="controls">
+        <button id="btn-start" class="btn">Iniciar</button>
+        <button id="btn-pause" class="btn">Pausar</button>
+        <button id="btn-reset" class="btn">Reset</button>
+      </div>
+
+
+
+      <div class="touchControls">
+        <button id="t-left">◀</button>
+        <button id="t-rot">⤴</button>
+        <button id="t-right">▶</button>
+        <button id="t-down">▼</button>
+        <button id="t-drop">⤓</button>
+      </div>
+
+      <footer>Tetris Hans Alvarez</footer>
+    </div>
+  </div>
+
+  <script>
+    // ========== TETROMINOS ==========
+    const TETROMINOS = {
+      I: [
+        [0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0],
+      ],
+      J: [
+        [1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+        [1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0],
+      ],
+      L: [
+        [0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+        [1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+      ],
+      O: [
+        [0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      ],
+      S: [
+        [0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+      ],
+      T: [
+        [0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+        [1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0],
+      ],
+      Z: [
+        [1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+      ],
+    };
+
+    const COLORS = {
+      I: "cI",
+      J: "cJ",
+      L: "cL",
+      O: "cO",
+      S: "cS",
+      T: "cT",
+      Z: "cZ",
+    };
+
+    const COLS = 10,
+      ROWS = 20;
+    let gridEl = document.getElementById("grid");
+    let nextEl = document.getElementById("next");
+    let scoreEl = document.getElementById("score");
+    let linesEl = document.getElementById("lines");
+    let levelEl = document.getElementById("level");
+    let highEl = document.getElementById("high");
+
+    let cells = [];
+    let nextCells = [];
+    let board = [];
+    let current = null;
+    let nextTet = null;
+    let dropInterval = null;
+    let dropSpeed = 800;
+    let score = 0,
+      lines = 0,
+      level = 1;
+    let gameRunning = false;
+    let paused = false;
+
+    const HIGH = localStorage.getItem("tetris_high") || 0;
+    highEl.textContent = HIGH;
+
+    function createGrid() {
+      gridEl.innerHTML = "";
+      cells = [];
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          let d = document.createElement("div");
+          d.className = "cell";
+          gridEl.appendChild(d);
+          cells.push(d);
+        }
+      }
+
+      nextEl.innerHTML = "";
+      nextCells = [];
+      for (let i = 0; i < 16; i++) {
+        let d = document.createElement("div");
+        d.className = "cell";
+        nextEl.appendChild(d);
+        nextCells.push(d);
+      }
+    }
+
+    function resetBoard() {
+      board = [];
+      for (let r = 0; r < ROWS; r++) {
+        let row = new Array(COLS).fill(0);
+        board.push(row);
+      }
+    }
+
+    function randTet() {
+      const types = Object.keys(TETROMINOS);
+      return types[Math.floor(Math.random() * types.length)];
+    }
+
+    function getShape(type, rotIndex) {
+      const variants = TETROMINOS[type];
+      return variants[rotIndex % variants.length];
+    }
+
+    function spawn() {
+      if (!nextTet) nextTet = randTet();
+      const type = nextTet;
+      nextTet = randTet();
+      current = {
+        type,
+        rotation: 0,
+        shape: getShape(type, 0),
+        x: 3,
+        y: -1,
+      };
+
+      if (collision(current.x, current.y, current.shape)) {
+        endGame();
+      }
+      renderNext();
+    }
+
+    function collision(x, y, shape) {
+      for (let sy = 0; sy < 4; sy++) {
+        for (let sx = 0; sx < 4; sx++) {
+          const idx = sy * 4 + sx;
+          if (shape[idx]) {
+            const gx = x + sx;
+            const gy = y + sy;
+            if (gx < 0 || gx >= COLS || gy >= ROWS) return true;
+            if (gy >= 0 && board[gy][gx]) return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    function lockPiece() {
+      const s = current.shape;
+      for (let sy = 0; sy < 4; sy++) {
+        for (let sx = 0; sx < 4; sx++) {
+          const idx = sy * 4 + sx;
+          if (s[idx]) {
+            const gx = current.x + sx;
+            const gy = current.y + sy;
+            if (gy >= 0) {
+              board[gy][gx] = current.type;
+            }
+          }
+        }
+      }
+      clearLines();
+      spawn();
+    }
+
+    function clearLines() {
+      let cleared = 0;
+      for (let r = ROWS - 1; r >= 0; r--) {
+        if (board[r].every((cell) => cell !== 0)) {
+          board.splice(r, 1);
+          board.unshift(new Array(COLS).fill(0));
+          cleared++;
+          r++;
+        }
+      }
+
+      if (cleared > 0) {
+        const pointsTable = { 1: 40, 2: 100, 3: 300, 4: 1200 };
+        score += (pointsTable[cleared] || 0) * level;
+        lines += cleared;
+        const newLevel = Math.floor(lines / 10) + 1;
+        if (newLevel !== level) {
+          level = newLevel;
+          updateSpeed();
+        }
+        updateHUD();
+      }
+    }
+
+    function updateSpeed() {
+      dropSpeed = Math.max(100, 800 - (level - 1) * 60);
+      if (gameRunning && !paused) {
+        clearInterval(dropInterval);
+        dropInterval = setInterval(stepDown, dropSpeed);
+      }
+    }
+
+    function move(dx, dy) {
+      if (!current) return;
+      const nx = current.x + dx;
+      const ny = current.y + dy;
+      if (!collision(nx, ny, current.shape)) {
+        current.x = nx;
+        current.y = ny;
+        render();
+        return true;
+      }
+      return false;
+    }
+
+    function rotate(dir = 1) {
+      if (!current) return;
+      const variants = TETROMINOS[current.type];
+      const nextRot = (current.rotation + dir + variants.length) % variants.length;
+      const nextShape = getShape(current.type, nextRot);
+      const kicks = [0, -1, 1, -2, 2];
+      for (let k of kicks) {
+        if (!collision(current.x + k, current.y, nextShape)) {
+          current.rotation = nextRot;
+          current.shape = nextShape;
+          current.x += k;
+          render();
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function hardDrop() {
+      if (!current) return;
+      while (move(0, 1)) { }
+      lockPiece();
+      render();
+    }
+
+    function stepDown() {
+      if (!current) return;
+      if (!move(0, 1)) {
+        lockPiece();
+      }
+    }
+
+    function render() {
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          const idx = r * COLS + c;
+          const val = board[r][c];
+          const el = cells[idx];
+          el.className = "cell";
+          if (val) el.classList.add(COLORS[val]);
+        }
+      }
+
+      if (current) {
+        let ghostY = current.y;
+        while (!collision(current.x, ghostY + 1, current.shape)) {
+          ghostY++;
+        }
+        drawShapeAt(current.shape, current.x, ghostY, true);
+        drawShapeAt(current.shape, current.x, current.y, false);
+      }
+    }
+
+    function drawShapeAt(shape, x, y, ghost = false) {
+      for (let sy = 0; sy < 4; sy++) {
+        for (let sx = 0; sx < 4; sx++) {
+          const idx = sy * 4 + sx;
+          if (shape[idx]) {
+            const gx = x + sx;
+            const gy = y + sy;
+            if (gy >= 0 && gy < ROWS && gx >= 0 && gx < COLS) {
+              const el = cells[gy * COLS + gx];
+              el.classList.add(COLORS[current.type]);
+              if (ghost) el.classList.add("ghost");
+            }
+          }
+        }
+      }
+    }
+
+    function renderNext() {
+      nextCells.forEach((c) => (c.className = "cell"));
+      if (!nextTet) return;
+      const shape = getShape(nextTet, 0);
+      for (let sy = 0; sy < 4; sy++) {
+        for (let sx = 0; sx < 4; sx++) {
+          const idx = sy * 4 + sx;
+          if (shape[idx]) {
+            const elIndex = sy * 4 + sx;
+            if (nextCells[elIndex]) nextCells[elIndex].classList.add(COLORS[nextTet]);
+          }
+        }
+      }
+    }
+
+    function updateHUD() {
+      scoreEl.textContent = score;
+      linesEl.textContent = lines;
+      levelEl.textContent = level;
+      highEl.textContent = localStorage.getItem("tetris_high") || 0;
+    }
+
+    function startGame() {
+      createGrid();
+      resetBoard();
+      spawn();
+      score = 0;
+      lines = 0;
+      level = 1;
+      updateSpeed();
+      updateHUD();
+      gameRunning = true;
+      paused = false;
+      clearInterval(dropInterval);
+      dropInterval = setInterval(stepDown, dropSpeed);
+    }
+
+    function pauseGame() {
+      if (!gameRunning) return;
+      paused = !paused;
+      if (paused) {
+        clearInterval(dropInterval);
+      } else {
+        updateSpeed();
+      }
+    }
+
+    function resetGame() {
+      clearInterval(dropInterval);
+      gameRunning = false;
+      paused = false;
+      createGrid();
+      resetBoard();
+      current = null;
+      nextTet = null;
+      score = 0;
+      lines = 0;
+      level = 1;
+      updateHUD();
+    }
+
+    function endGame() {
+      clearInterval(dropInterval);
+      gameRunning = false;
+      paused = false;
+      const old = parseInt(localStorage.getItem("tetris_high") || "0", 10);
+      if (score > old) localStorage.setItem("tetris_high", score);
+      updateHUD();
+      setTimeout(() => {
+        alert("Game Over\nPuntos: " + score);
+        resetGame();
+      }, 50);
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (!gameRunning) return;
+      if (e.key === "ArrowLeft") {
+        move(-1, 0);
+        e.preventDefault();
+      } else if (e.key === "ArrowRight") {
+        move(1, 0);
+        e.preventDefault();
+      } else if (e.key === "ArrowDown") {
+        move(0, 1);
+        e.preventDefault();
+      } else if (e.key === "ArrowUp") {
+        rotate(1);
+        e.preventDefault();
+      } else if (e.key === "x" || e.key === "X") {
+        rotate(1);
+        e.preventDefault();
+      } else if (e.key === "z" || e.key === "Z") {
+        rotate(-1);
+        e.preventDefault();
+      } else if (e.code === "Space") {
+        hardDrop();
+        e.preventDefault();
+      }
+    });
+
+    document.getElementById("btn-start").addEventListener("click", () => {
+      if (!gameRunning) startGame();
+    });
+
+    document.getElementById("btn-pause").addEventListener("click", () => {
+      if (!gameRunning) return;
+      pauseGame();
+    });
+
+    document.getElementById("btn-reset").addEventListener("click", () => {
+      resetGame();
+    });
+
+    document.getElementById("t-left").addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      move(-1, 0);
+    });
+
+    document.getElementById("t-right").addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      move(1, 0);
+    });
+
+    document.getElementById("t-rot").addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      rotate(1);
+    });
+
+    document.getElementById("t-down").addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      move(0, 1);
+    });
+
+    document.getElementById("t-drop").addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      hardDrop();
+    });
+
+    createGrid();
+    resetBoard();
+    render();
+    renderNext();
+    updateHUD();
+  </script>
+</body>
+
+</html>
